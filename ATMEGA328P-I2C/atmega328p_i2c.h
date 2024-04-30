@@ -1,5 +1,5 @@
-#ifndef I2C_H
-#define I2C_H
+#ifndef ATMEGA328P_I2C_H
+#define ATMEGA328P_I2C_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -55,4 +55,4 @@ void i2c_initialize(const uint32_t);
 int i2c_send(const uint8_t, uint8_t const * const, const unsigned);
 int i2c_receive(const uint8_t, uint8_t *const, const unsigned);
 
-#endif /* I2C_H */
+#endif /* ATMEGA328P_I2C_H */
