@@ -8,6 +8,13 @@
 
 #define ATMEGA328P_CPU_FREQUENCY_HZ 16000000UL
 
+#define I2C_STANDARD_MODE_FREQUENCY_HZ       100000UL
+#define I2C_FAST_MODE_FREQUENCY_HZ           400000UL
+#define I2C_FAST_MODE_PLUS_FREQUENCY_HZ     1000000UL
+#define I2C_HI_SPEED_MODE_FREQUENCY_HZ      1700000UL
+#define I2C_HI_SPEED_MODE_PLUS_FREQUENCY_HZ 3400000UL
+#define I2C_ULTRA_FAST_MODE_FREQUENCY_HZ    5000000UL
+
 /* Counter number for 1 ms timeout for 16 MHz ATMega328P.
 ATMega328P takes 1 ms to finish counting from 0 to I2C_TIMEOUT,
 thus generating 1 ms timeout. */

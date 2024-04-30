@@ -45,12 +45,6 @@ static void i2c_stop(void) {
     0b10010100, i.e. 148 (TWCR_STOP_CONDITION_VALUE) */
     TWCR = TWCR_STOP_CONDITION_VALUE;
 
-    /* Wait until stop condition is transmitted,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
-    }
-
     /* Clear TWEN bit from control register (TWCR),
     to stop using I2C.
     This bit is set by clearing 2th bit, and leaving the rest of bits as is.
@@ -64,6 +58,9 @@ static void i2c_stop(void) {
 static void i2c_read_from_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
 
+    // Put 7bit address and read bit to TWI data register (TWDR)
+    TWDR = (address << 1U) | 1U;
+
     /* Before any I2C operation,
     TWI Control Register (TWCR) should have the following bits set:
     - Clear TWINT flag by writing 1 (7th bit)
@@ -71,9 +68,6 @@ static void i2c_read_from_address(const uint8_t address) {
     Therefore, the register value is:
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
-
-    // Put 7bit address and read bit to TWI data register (TWDR)
-    TWDR = (address << 1U) | 1U;
 
     /* Wait until finished transmitting data from TWDR,
     i.e. TWINT bit from TWCR register is set to 1. */
@@ -93,6 +87,13 @@ static void i2c_write_to_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
     static const uint8_t TWDR_WRITE_BIT_MASK = 254U;
 
+    /* Put 7 bit address and write bit to TWI data register (TWDR)
+    Write bit is set by clearing 0th bit, and leaving the rest of bits as is.
+    This can be done by using a following bit mask:
+    0b11111110, i.e. 254 (TWDR_WRITE_BIT_MASK) */
+    uint8_t twdr_bits = (address << 1U) & TWDR_WRITE_BIT_MASK;
+    TWDR = twdr_bits;
+
     /* Before any I2C operation,
     TWI Control Register (TWCR) should have the following bits set:
     - Clear TWINT flag by writing 1 (7th bit)
@@ -100,12 +101,6 @@ static void i2c_write_to_address(const uint8_t address) {
     Therefore, the register value is:
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
-
-    /* Put 7 bit address and write bit to TWI data register (TWDR)
-    Write bit is set by clearing 0th bit, and leaving the rest of bits as is.
-    This can be done by using a following bit mask:
-    0b11111110, i.e. 254 (TWDR_WRITE_BIT_MASK) */
-    TWDR = (address << 1U) & TWDR_WRITE_BIT_MASK;
 
     /* Wait until finished transmitting data from TWDR,
     i.e. TWINT bit from TWCR register is set to 1. */
@@ -179,6 +174,9 @@ static uint8_t i2c_read_data(const bool is_last_byte) {
 static void i2c_write_data(const uint8_t data) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
 
+    // Put 8 bit data to TWI data register (TWDR) for writing to slave device
+    TWDR = data;
+
     /* Before any I2C operation,
     TWI Control Register (TWCR) should have the following bits set:
     - Clear TWINT flag by writing 1 (7th bit)
@@ -186,9 +184,6 @@ static void i2c_write_data(const uint8_t data) {
     Therefore, the register value is:
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
-
-    // Put 8 bit data to TWI data register (TWDR) for writing to slave device
-    TWDR = data;
 
     /* Wait until finished transmitting data from TWDR,
     i.e. TWINT bit from TWCR register is set to 1. */
@@ -208,7 +203,7 @@ void i2c_initialize(const uint32_t i2c_clock_frequency) {
     /* i2c_clock_frequency = ATMEGA328P_CPU_FREQUENCY_HZ / (16 + 2 * TWBR * TWPS_VALUE)
     TWPS: I2C (TWI) Prescaler bits
     TWPS -> TWPS_VALUE
-    -----------------
+    ------------------
     00   -> 1
     01   -> 2
     10   -> 16
@@ -227,10 +222,10 @@ void i2c_initialize(const uint32_t i2c_clock_frequency) {
     The clear mask is 0b11111100, i.e. 252 */
     static const uint8_t TWSR_TWPS_CLEAR_MASK = 252U;
 
-    TWSR &= TWSR_TWPS_CLEAR_MASK;
-
     uint8_t twbr_value = ((ATMEGA328P_CPU_FREQUENCY_HZ / i2c_clock_frequency) - 16U) / (2U * TWPS_VALUE);
     TWBR = twbr_value;
+
+    TWSR &= TWSR_TWPS_CLEAR_MASK;
 
     is_initialized = true;
 }
