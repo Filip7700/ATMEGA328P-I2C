@@ -122,10 +122,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="i2c.c">
+    <None Include="atmega328p_i2c.cpp">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="i2c.h">
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="atmega328p_i2c.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
