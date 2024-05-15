@@ -2,11 +2,11 @@
 
 
 
-static bool is_initialized = false;
+ATMega328PI2C::ATMega328PI2C(): is_initialized(false) {}
 
 
 
-static void i2c_start(void) {
+void ATMega328PI2C::start(void) {
     static const uint8_t TWCR_START_CONDITION_VALUE = 164U;
 
     /* In order to successfully start data transmission,
@@ -32,7 +32,7 @@ static void i2c_start(void) {
 
 
 
-static void i2c_stop(void) {
+void ATMega328PI2C::stop(void) {
     static const uint8_t TWCR_STOP_CONDITION_VALUE = 148U;
     static const uint8_t TWCR_TWEN_CLEAR_MASK = 251U;
 
@@ -55,7 +55,7 @@ static void i2c_stop(void) {
 
 
 
-static void i2c_read_from_address(const uint8_t address) {
+void ATMega328PI2C::read_from_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
 
     // Put 7bit address and read bit to TWI data register (TWDR)
@@ -83,7 +83,7 @@ static void i2c_read_from_address(const uint8_t address) {
 
 
 
-static void i2c_write_to_address(const uint8_t address) {
+void ATMega328PI2C::write_to_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
     static const uint8_t TWDR_WRITE_BIT_MASK = 254U;
 
@@ -116,7 +116,7 @@ static void i2c_write_to_address(const uint8_t address) {
 
 
 
-static uint8_t i2c_read_data(const bool is_last_byte) {
+uint8_t ATMega328PI2C::read_data(const bool is_last_byte) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
     static const uint8_t TWCR_MULTI_READ_INITIAL_VALUE = 196U;
 
@@ -171,7 +171,7 @@ static uint8_t i2c_read_data(const bool is_last_byte) {
 
 
 
-static void i2c_write_data(const uint8_t data) {
+void ATMega328PI2C::write_data(const uint8_t data) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
 
     // Put 8 bit data to TWI data register (TWDR) for writing to slave device
@@ -199,7 +199,7 @@ static void i2c_write_data(const uint8_t data) {
 
 
 
-void i2c_initialize(const uint32_t i2c_clock_frequency) {
+void ATMega328PI2C::initialize(const uint32_t i2c_clock_frequency) {
     /* i2c_clock_frequency = ATMEGA328P_CPU_FREQUENCY_HZ / (16 + 2 * TWBR * TWPS_VALUE)
     TWPS: I2C (TWI) Prescaler bits
     TWPS -> TWPS_VALUE
@@ -227,15 +227,15 @@ void i2c_initialize(const uint32_t i2c_clock_frequency) {
 
     TWSR &= TWSR_TWPS_CLEAR_MASK;
 
-    is_initialized = true;
+    this->is_initialized = true;
 }
 
 
 
-int i2c_send(const uint8_t target_address, uint8_t const * const buffer, const unsigned buffer_size) {
+int ATMega328PI2C::send(const uint8_t target_address, uint8_t const * const buffer, const unsigned buffer_size) {
     int ret = I2C_RET_OK;
 
-    if(is_initialized) {
+    if(this->is_initialized) {
         i2c_start();
         i2c_write_to_address(target_address);
 
@@ -255,10 +255,10 @@ int i2c_send(const uint8_t target_address, uint8_t const * const buffer, const u
 
 
 
-int i2c_receive(const uint8_t target_address, uint8_t *const buffer, const unsigned buffer_size) {
+int ATMega328PI2C::receive(const uint8_t target_address, uint8_t *const buffer, const unsigned buffer_size) {
     int ret = I2C_RET_OK;
 
-    if(is_initialized) {
+    if(this->is_initialized) {
         i2c_start();
         i2c_read_from_address(target_address);
 

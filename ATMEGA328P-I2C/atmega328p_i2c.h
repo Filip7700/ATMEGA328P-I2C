@@ -2,7 +2,6 @@
 #define ATMEGA328P_I2C_H
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <avr/io.h>
 #include <avr/cpufunc.h>
 
@@ -46,13 +45,29 @@ for data reception from slave. */
 #define I2C_TWS_DATA_READ_NACK          0x58
 
 // ATMEGA328P I2C driver error codes
-#define I2C_RET_OK 0
+#define I2C_RET_OK               0
 #define I2C_RET_NOT_INITIALIZED -1
+#define I2C_RET_TIMEOUT         -2
 
 
 
-void i2c_initialize(const uint32_t);
-int i2c_send(const uint8_t, uint8_t const * const, const unsigned);
-int i2c_receive(const uint8_t, uint8_t *const, const unsigned);
+class ATMega328PI2C {
+public:
+    ATMega328PI2C();
+
+    void initialize(const uint32_t);
+    int send(const uint8_t, uint8_t const * const, const unsigned);
+    int receive(const uint8_t, uint8_t *const, const unsigned);
+
+private:
+    bool is_initialized;
+
+    void start(void);
+    void stop(void);
+    void read_from_address(const uint8_t);
+    void write_to_address(const uint8_t);
+    uint8_t read_data(const bool);
+    void write_data(const uint8_t);
+};
 
 #endif /* ATMEGA328P_I2C_H */
