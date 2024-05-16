@@ -2,12 +2,57 @@
 
 
 
-ATMega328PI2C::ATMega328PI2C(): is_initialized(false) {}
+ATMega328PI2C::ATMega328PI2C(): is_initialized(false), i2c_timeout_count(I2C_TIMEOUT_COUNTER_DEFAULT) {}
 
 
 
-void ATMega328PI2C::start(void) {
+ATMega328PI2C::ATMEGA328PI2C(const uint32_t timeout_counter): is_initialized(false), i2c_timeout_count(timeout_counter) {}
+
+
+
+int ATMega328PI2C::wait_for_transmission_completion(void) {
+    int ret = I2C_RET_TIMEOUT;
+
+    uint8_t twint_value = 0U;
+
+    /* Wait until finished transmitting data,
+    i.e. TWINT bit from TWCR register is set to 1. */
+    for(unsigned i = 0U; i < this->i2c_timeout_count && twint_value == 0U; i++) {
+        twint_value = (TWCR & I2C_TWCR_TWINT_MASK) >> TWINT;
+    }
+
+    if(twint_value == 1U) {
+        ret = I2C_RET_OK;
+    }
+
+    return ret;
+}
+
+
+
+int ATMega328PI2C::wait_for_acknowledgment(const uint8_t acknowledgment_status_code) {
+    int ret = I2C_RET_TIMEOUT;
+    uint8_t i2c_status = TWSR & I2C_TWS_MASK;
+
+    /* Wait for the expected acknowledgment,
+    defined by acknowledgment_status_code input parameter. */
+    for(unsigned i = 0U; i < this->i2c_timeout_count && i2c_status != acknowledgment_status_code; i++) {
+        i2c_status = TWSR & I2C_TWS_MASK;
+    }
+
+    if(i2c_status == acknowledgment_status_code) {
+        ret = I2C_RET_OK;
+    }
+
+    return ret;
+}
+
+
+
+int ATMega328PI2C::start_communication(void) {
     static const uint8_t TWCR_START_CONDITION_VALUE = 164U;
+
+    int ret = I2C_RET_TIMEOUT;
 
     /* In order to successfully start data transmission,
     TWI Control Register (TWCR) should have the following bits set:
@@ -18,21 +63,18 @@ void ATMega328PI2C::start(void) {
     0b10100100, i.e. 164 (TWCR_START_CONDITION_VALUE) */
     TWCR = TWCR_START_CONDITION_VALUE;
 
-    /* Wait until start condition is transmitted,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
+        this->wait_for_acknowledgment(I2C_TWS_START);
     }
 
-    // Wait for the acknowledgment
-    while((TWSR & I2C_TWS_MASK) != I2C_TWS_START) {
-        _NOP();
-    }
+    return ret;
 }
 
 
 
-void ATMega328PI2C::stop(void) {
+void ATMega328PI2C::stop_communication(void) {
     static const uint8_t TWCR_STOP_CONDITION_VALUE = 148U;
     static const uint8_t TWCR_TWEN_CLEAR_MASK = 251U;
 
@@ -55,8 +97,10 @@ void ATMega328PI2C::stop(void) {
 
 
 
-void ATMega328PI2C::read_from_address(const uint8_t address) {
+int ATMega328PI2C::read_from_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
+
+    int ret = I2C_RET_TIMEOUT;
 
     // Put 7bit address and read bit to TWI data register (TWDR)
     TWDR = (address << 1U) | 1U;
@@ -69,23 +113,22 @@ void ATMega328PI2C::read_from_address(const uint8_t address) {
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
 
-    /* Wait until finished transmitting data from TWDR,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
+        ret = this->wait_for_acknowledgment(I2C_TWS_SLAVE_ADDRESS_READ_ACK);
     }
 
-    // Wait for the acknowledgment
-    while((TWSR & I2C_TWS_MASK) != I2C_TWS_SLAVE_ADDRESS_READ_ACK) {
-        _NOP();
-    }
+    return ret;
 }
 
 
 
-void ATMega328PI2C::write_to_address(const uint8_t address) {
+int ATMega328PI2C::write_to_address(const uint8_t address) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
     static const uint8_t TWDR_WRITE_BIT_MASK = 254U;
+
+    int ret = I2C_RET_TIMEOUT;
 
     /* Put 7 bit address and write bit to TWI data register (TWDR)
     Write bit is set by clearing 0th bit, and leaving the rest of bits as is.
@@ -102,77 +145,88 @@ void ATMega328PI2C::write_to_address(const uint8_t address) {
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
 
-    /* Wait until finished transmitting data from TWDR,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
+        ret = this->wait_for_acknowledgment(I2C_TWS_SLAVE_ADDRESS_WRITE_ACK);
     }
 
-    // Wait for the acknowledgment
-    while((TWSR & I2C_TWS_MASK) != I2C_TWS_SLAVE_ADDRESS_WRITE_ACK) {
-        _NOP();
-    }
+    return ret;
 }
 
 
 
-uint8_t ATMega328PI2C::read_data(const bool is_last_byte) {
-    static const uint8_t TWCR_INITIAL_VALUE = 132U;
+int ATMega328PI2C::read_byte(uint8_t* const data) {
     static const uint8_t TWCR_MULTI_READ_INITIAL_VALUE = 196U;
 
-    uint8_t read_data = 0U;
+    int ret = I2C_RET_TIMEOUT;
 
-    if(is_last_byte) {
-        /* Before any I2C operation,
-        TWI Control Register (TWCR) should have the following bits set:
-        - Clear TWINT flag by writing 1 (7th bit)
-        - Set TWEN bit to initialize the I2C/TWI (2nd bit).
-        Therefore, the register value is: 0b10000100,
-        i.e. 132 (TWCR_INITIAL_VALUE) */
-        TWCR = TWCR_INITIAL_VALUE;
-    }
-    else {
-        /* In case master wants to read more than 1 byte (is_last_byte is false)
-        additional bi in TWCR should be set.
-        - Set TWEA bit for reading multiple bytes (6th bit).
-        Therefore, the final TWCR register value is:
-        0b11000100, i.e. 196 (TWCR_MULTI_READ_INITIAL_VALUE) */
-        TWCR = TWCR_MULTI_READ_INITIAL_VALUE;
+    /* In case master wants to read more than 1 byte
+    TWI Control Register (TWCR) should have the following bits set:
+    - Clear TWINT flag by writing 1 (7th bit)
+    - Set TWEA bit for reading multiple bytes (6th bit).
+    - Set TWEN bit to initialize the I2C/TWI (2nd bit).
+    Therefore, the final TWCR register value is:
+    0b11000100, i.e. 196 (TWCR_MULTI_READ_INITIAL_VALUE) */
+    TWCR = TWCR_MULTI_READ_INITIAL_VALUE;
+
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
+        /* In case master wants to read multiple bytes,
+        it sends ACK bit to slave device.
+        In this case master expects more incoming bytes from slave. */
+        ret = this->wait_for_acknowledgment(I2C_TWS_DATA_READ_ACK);
+
+        if(ret == I2C_RET_OK) {
+            /* After the reading is complete,
+            new received data is in the I2C data register (TWDR). */
+            *data = TWDR;
+        }
     }
 
-    /* Wait until finished transmitting data from TWDR,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
-    }
+    return ret;
+}
 
-    if(is_last_byte) {
+
+
+int ATMega328PI2C::read_last_byte(uint8_t* const data) {
+    static const uint8_t TWCR_INITIAL_VALUE = 132U;
+
+    int ret = I2C_RET_TIMEOUT;
+
+    /* Before any I2C operation,
+    TWI Control Register (TWCR) should have the following bits set:
+    - Clear TWINT flag by writing 1 (7th bit)
+    - Set TWEN bit to initialize the I2C/TWI (2nd bit).
+    Therefore, the register value is: 0b10000100,
+    i.e. 132 (TWCR_INITIAL_VALUE) */
+    TWCR = TWCR_INITIAL_VALUE;
+
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
         /* In case when master reads the last byte, after receiving last bit,
         it sends NACK bit to slave device.
         Therefore, the program should wait for NACK code. */
-        while((TWSR & I2C_TWS_MASK) != I2C_TWS_DATA_READ_NACK) {
-            _NOP();
-        }
-    }
-    else {
-        /* Otherwise, wait for the acknowledgment, as usual.
-        In this case master expects more incoming bytes from slave. */
-        while((TWSR & I2C_TWS_MASK) != I2C_TWS_DATA_READ_ACK) {
-            _NOP();
+        ret = this->wait_for_acknowledgment(I2C_TWS_DATA_READ_NACK);
+
+        if(ret == I2C_RET_OK) {
+            /* After the reading is complete,
+            new received data is in the I2C data register (TWDR). */
+            *data = TWDR;
         }
     }
 
-    /* After the reading is complete,
-    new received data is in the I2C data register (TWDR). */
-    read_data = TWDR;
-
-    return read_data;
+    return ret;
 }
 
 
 
-void ATMega328PI2C::write_data(const uint8_t data) {
+int ATMega328PI2C::write_data(const uint8_t data) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
+
+    int ret = I2C_RET_TIMEOUT;
 
     // Put 8 bit data to TWI data register (TWDR) for writing to slave device
     TWDR = data;
@@ -185,21 +239,18 @@ void ATMega328PI2C::write_data(const uint8_t data) {
     0b10000100, i.e. 132 (TWCR_INITIAL_VALUE) */
     TWCR = TWCR_INITIAL_VALUE;
 
-    /* Wait until finished transmitting data from TWDR,
-    i.e. TWINT bit from TWCR register is set to 1. */
-    while(((TWCR & I2C_TWCR_TWINT_MASK) >> TWINT) == 0U) {
-        _NOP();
+    ret = this->wait_for_transmission_completion();
+
+    if(ret == I2C_RET_OK) {
+        ret = this->wait_for_acknowledgment(I2C_TWS_DATA_WRITE_ACK);
     }
 
-    // Wait for the acknowledgment
-    while((TWSR & I2C_TWS_MASK) != I2C_TWS_DATA_WRITE_ACK) {
-        _NOP();
-    }
+    return ret;
 }
 
 
 
-void ATMega328PI2C::initialize(const uint32_t i2c_clock_frequency) {
+void ATMega328PI2C::i2c_initialize(const uint32_t i2c_clock_frequency) {
     /* i2c_clock_frequency = ATMEGA328P_CPU_FREQUENCY_HZ / (16 + 2 * TWBR * TWPS_VALUE)
     TWPS: I2C (TWI) Prescaler bits
     TWPS -> TWPS_VALUE
@@ -222,32 +273,23 @@ void ATMega328PI2C::initialize(const uint32_t i2c_clock_frequency) {
     The clear mask is 0b11111100, i.e. 252 */
     static const uint8_t TWSR_TWPS_CLEAR_MASK = 252U;
 
-    uint8_t twbr_value = ((ATMEGA328P_CPU_FREQUENCY_HZ / i2c_clock_frequency) - 16U) / (2U * TWPS_VALUE);
-    TWBR = twbr_value;
+    int ret = I2C_RET_NOT_INITIALIZED;
 
-    TWSR &= TWSR_TWPS_CLEAR_MASK;
+    if(i2c_clock_frequency == I2C_STANDARD_MODE_FREQUENCY_HZ
+        || i2c_clock_frequency == I2C_FAST_MODE_FREQUENCY_HZ
+        || i2c_clock_frequency == I2C_FAST_MODE_PLUS_FREQUENCY_HZ
+        || i2c_clock_frequency == I2C_HI_SPEED_MODE_FREQUENCY_HZ
+        || i2c_clock_frequency == I2C_HI_SPEED_MODE_PLUS_FREQUENCY_HZ
+        || i2c_clock_frequency == I2C_ULTRA_FAST_MODE_FREQUENCY_HZ) {
 
-    this->is_initialized = true;
-}
+        uint8_t twbr_value = ((ATMEGA328P_CPU_FREQUENCY_HZ / i2c_clock_frequency) - 16U) / (2U * TWPS_VALUE);
+        TWBR = twbr_value;
 
+        TWSR &= TWSR_TWPS_CLEAR_MASK;
 
+        this->is_initialized = true;
 
-int ATMega328PI2C::send(const uint8_t target_address, uint8_t const * const buffer, const unsigned buffer_size) {
-    int ret = I2C_RET_OK;
-
-    if(this->is_initialized) {
-        i2c_start();
-        i2c_write_to_address(target_address);
-
-        unsigned i;
-        for(i = 0U; i < buffer_size; i++) {
-            i2c_write_data(buffer[i]);
-        }
-
-        i2c_stop();
-    }
-    else {
-        ret = I2C_RET_NOT_INITIALIZED;
+        ret = I2C_RET_OK;
     }
 
     return ret;
@@ -255,28 +297,60 @@ int ATMega328PI2C::send(const uint8_t target_address, uint8_t const * const buff
 
 
 
-int ATMega328PI2C::receive(const uint8_t target_address, uint8_t *const buffer, const unsigned buffer_size) {
-    int ret = I2C_RET_OK;
+int ATMega328PI2C::i2c_send(const uint8_t target_address, uint8_t const * const buffer, const unsigned buffer_size) {
+    int ret = I2C_RET_NOT_INITIALIZED;
 
     if(this->is_initialized) {
-        i2c_start();
-        i2c_read_from_address(target_address);
+        if(buffer == NULL || buffer_size == 0U) {
+            ret = I2C_RET_INVALID_BUFFER;
+        }
+        else {
+            ret = start_communication();
 
-        unsigned i;
-        for(i = 0U; i < buffer_size; i++) {
-            bool is_last_byte = false;
+            if(ret == I2C_RET_OK) {
+                ret = write_to_address(target_address);
 
-            if(i == buffer_size - 1U) {
-                is_last_byte = true;
+                for(unsigned i = 0U; i < buffer_size && ret == I2C_RET_OK; i++) {
+                    ret = write_byte(buffer[i]);
+                }
             }
 
-            buffer[i] = i2c_read_data(is_last_byte);
+            stop_communication();
         }
 
-        i2c_stop();
+
     }
-    else {
-        ret = I2C_RET_NOT_INITIALIZED;
+
+    return ret;
+}
+
+
+
+int ATMega328PI2C::i2c_receive(const uint8_t target_address, uint8_t* const buffer, const unsigned buffer_size) {
+    int ret = I2C_RET_NOT_INITIALIZED;
+
+    if(this->is_initialized) {
+        if(buffer == NULL || buffer_size == 0U) {
+            ret = I2C_RET_INVALID_BUFFER;
+        }
+        else {
+            ret = start_communication();
+
+            if(ret == I2C_RET_OK) {
+                ret = read_from_address(target_address);
+
+                for(unsigned i = 0U; i < buffer_size && ret == I2C_RET_OK; i++) {
+                    if(i == buffer_size - 1U) {
+                        ret = read_last_byte(&buffer[i]);
+                    }
+                    else {
+                        ret = read_byte(&buffer[i]);
+                    }
+                }
+            }
+
+            stop_communication();
+        }
     }
 
     return ret;

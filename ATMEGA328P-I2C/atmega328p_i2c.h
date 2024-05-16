@@ -1,5 +1,4 @@
-#ifndef ATMEGA328P_I2C_H
-#define ATMEGA328P_I2C_H
+#pragma once
 
 #include <stdint.h>
 #include <avr/io.h>
@@ -14,10 +13,11 @@
 #define I2C_HI_SPEED_MODE_PLUS_FREQUENCY_HZ 3400000UL
 #define I2C_ULTRA_FAST_MODE_FREQUENCY_HZ    5000000UL
 
-/* Counter number for 1 ms timeout for 16 MHz ATMega328P.
-ATMega328P takes 1 ms to finish counting from 0 to I2C_TIMEOUT,
-thus generating 1 ms timeout. */
-#define I2C_TIMEOUT 1600U
+/* Maximal number of counts for pseudo timer, implemented using loop.
+Used in wait methods (see class ATMega328PI2C below) to avoid
+infinite loops, and generate timeout error instead,
+which can be further properly handled in code. */
+#define I2C_TIMEOUT_COUNTER_DEFAULT 160000UL;
 
 // ATMEGA328P's I2C register bit masks
 #define I2C_TWS_MASK        0xF8
@@ -48,26 +48,31 @@ for data reception from slave. */
 #define I2C_RET_OK               0
 #define I2C_RET_NOT_INITIALIZED -1
 #define I2C_RET_TIMEOUT         -2
+#define I2C_RET_INVALID_BUFFER  -3
 
 
 
 class ATMega328PI2C {
 public:
     ATMega328PI2C();
+    ATMEGA328PI2C(const uint32_t);
 
-    void initialize(const uint32_t);
-    int send(const uint8_t, uint8_t const * const, const unsigned);
-    int receive(const uint8_t, uint8_t *const, const unsigned);
+    int i2c_initialize(const uint32_t);
+    int i2c_send(const uint8_t, uint8_t const * const, const unsigned);
+    int i2c_receive(const uint8_t, uint8_t* const, const unsigned);
 
 private:
     bool is_initialized;
+    uint32_t i2c_timeout_count;
 
-    void start(void);
-    void stop(void);
-    void read_from_address(const uint8_t);
-    void write_to_address(const uint8_t);
-    uint8_t read_data(const bool);
-    void write_data(const uint8_t);
+    int wait_for_transmission_completion(void);
+    int wait_for_acknowledgment(const uint8_t);
+
+    int start_communication(void);
+    void stop_communication(void);
+    int read_from_address(const uint8_t);
+    int write_to_address(const uint8_t);
+    int read_byte(uint8_t* const);
+    int read_last_byte(uint8_t* const);
+    int write_data(const uint8_t);
 };
-
-#endif /* ATMEGA328P_I2C_H */
