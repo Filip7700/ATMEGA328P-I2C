@@ -6,7 +6,14 @@ ATMega328PI2C::ATMega328PI2C(): is_initialized(false), i2c_timeout_count(I2C_TIM
 
 
 
-ATMega328PI2C::ATMEGA328PI2C(const uint32_t timeout_counter): is_initialized(false), i2c_timeout_count(timeout_counter) {}
+ATMega328PI2C::ATMega328PI2C(const uint32_t timeout_counter): is_initialized(false), i2c_timeout_count(timeout_counter) {}
+
+
+
+ATMega328PI2C::ATMega328PI2C(const ATMega328PI2C &other) {
+    this->is_initialized = other.is_initialized;
+    this->i2c_timeout_count = other.i2c_timeout_count;
+}
 
 
 
@@ -17,7 +24,8 @@ int ATMega328PI2C::wait_for_transmission_completion(void) {
 
     /* Wait until finished transmitting data,
     i.e. TWINT bit from TWCR register is set to 1. */
-    for(unsigned i = 0U; i < this->i2c_timeout_count && twint_value == 0U; i++) {
+    volatile unsigned i;
+    for(i = 0U; i < this->i2c_timeout_count && twint_value == 0U; i++) {
         twint_value = (TWCR & I2C_TWCR_TWINT_MASK) >> TWINT;
     }
 
@@ -36,7 +44,8 @@ int ATMega328PI2C::wait_for_acknowledgment(const uint8_t acknowledgment_status_c
 
     /* Wait for the expected acknowledgment,
     defined by acknowledgment_status_code input parameter. */
-    for(unsigned i = 0U; i < this->i2c_timeout_count && i2c_status != acknowledgment_status_code; i++) {
+    volatile unsigned i;
+    for(i = 0U; i < this->i2c_timeout_count && i2c_status != acknowledgment_status_code; i++) {
         i2c_status = TWSR & I2C_TWS_MASK;
     }
 
@@ -223,7 +232,7 @@ int ATMega328PI2C::read_last_byte(uint8_t* const data) {
 
 
 
-int ATMega328PI2C::write_data(const uint8_t data) {
+int ATMega328PI2C::write_byte(const uint8_t data) {
     static const uint8_t TWCR_INITIAL_VALUE = 132U;
 
     int ret = I2C_RET_TIMEOUT;
@@ -250,7 +259,7 @@ int ATMega328PI2C::write_data(const uint8_t data) {
 
 
 
-void ATMega328PI2C::i2c_initialize(const uint32_t i2c_clock_frequency) {
+int ATMega328PI2C::i2c_initialize(const uint32_t i2c_clock_frequency) {
     /* i2c_clock_frequency = ATMEGA328P_CPU_FREQUENCY_HZ / (16 + 2 * TWBR * TWPS_VALUE)
     TWPS: I2C (TWI) Prescaler bits
     TWPS -> TWPS_VALUE
@@ -305,17 +314,17 @@ int ATMega328PI2C::i2c_send(const uint8_t target_address, uint8_t const * const 
             ret = I2C_RET_INVALID_BUFFER;
         }
         else {
-            ret = start_communication();
+            ret = this->start_communication();
 
             if(ret == I2C_RET_OK) {
-                ret = write_to_address(target_address);
+                ret = this->write_to_address(target_address);
 
                 for(unsigned i = 0U; i < buffer_size && ret == I2C_RET_OK; i++) {
-                    ret = write_byte(buffer[i]);
+                    ret = this->write_byte(buffer[i]);
                 }
             }
 
-            stop_communication();
+            this->stop_communication();
         }
 
 
@@ -334,22 +343,22 @@ int ATMega328PI2C::i2c_receive(const uint8_t target_address, uint8_t* const buff
             ret = I2C_RET_INVALID_BUFFER;
         }
         else {
-            ret = start_communication();
+            ret = this->start_communication();
 
             if(ret == I2C_RET_OK) {
-                ret = read_from_address(target_address);
+                ret = this->read_from_address(target_address);
 
                 for(unsigned i = 0U; i < buffer_size && ret == I2C_RET_OK; i++) {
                     if(i == buffer_size - 1U) {
-                        ret = read_last_byte(&buffer[i]);
+                        ret = this->read_last_byte(&buffer[i]);
                     }
                     else {
-                        ret = read_byte(&buffer[i]);
+                        ret = this->read_byte(&buffer[i]);
                     }
                 }
             }
 
-            stop_communication();
+            this->stop_communication();
         }
     }
 
