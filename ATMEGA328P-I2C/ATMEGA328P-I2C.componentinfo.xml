@@ -37,24 +37,24 @@
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
 				<d4p1:anyType i:type="FileInfo">
-					<AbsolutePath>D:/Programi\Microchip Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\templates\library.c</AbsolutePath>
+					<AbsolutePath>D:/Programi\Microchip Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\templates\main.c</AbsolutePath>
 					<Attribute>template</Attribute>
 					<Category>source</Category>
-					<Condition>C Lib</Condition>
-					<FileContentHash>BVKHHE8853WvMkrOw0k3zg==</FileContentHash>
+					<Condition>C Exe</Condition>
+					<FileContentHash>KjvOcFWd++tbnsEMfVPd/w==</FileContentHash>
 					<FileVersion></FileVersion>
-					<Name>templates/library.c</Name>
+					<Name>templates/main.c</Name>
 					<SelectString>Main file (.c)</SelectString>
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
 				<d4p1:anyType i:type="FileInfo">
-					<AbsolutePath>D:/Programi\Microchip Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\templates\library.cpp</AbsolutePath>
+					<AbsolutePath>D:/Programi\Microchip Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\templates\main.cpp</AbsolutePath>
 					<Attribute>template</Attribute>
 					<Category>source</Category>
-					<Condition>C Lib</Condition>
-					<FileContentHash>G0XtXwMIamMgYWpjMWDloQ==</FileContentHash>
+					<Condition>C Exe</Condition>
+					<FileContentHash>1FtwXvKwf3w64LdBR2JwnQ==</FileContentHash>
 					<FileVersion></FileVersion>
-					<Name>templates/library.cpp</Name>
+					<Name>templates/main.cpp</Name>
 					<SelectString>Main file (.cpp)</SelectString>
 					<SourcePath></SourcePath>
 				</d4p1:anyType>
