@@ -82,7 +82,7 @@ board, external program has to be dowloaded and setup first.
 It's called avrdude.
 The following steps describe how download and install avrdude:
 1. Download avrdude from the [here](https://github.com/avrdudes/avrdude/releases).
-2. Extract the archive to any location of choice, let's call it *<avrdude-loc>*
+2. Extract the archive to any location of choice, let's call it _<avrdude-loc>_
 
 After extracting avrdude and before setting it up on Microchip Studio,
 correct USB port needs to be read, so the avrdude knows on what USB port
@@ -93,8 +93,8 @@ connected to Arduino on Windows 10 and Windows 11:
 1. If not already, connect Arduino board to PC with USB cable
 2. Open PowerShell (or WindowsTerminal)
 3. Type the following command: `Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match '^USB' }`
-4. Command will list all connected USB devices, find device which has COM in its name, something like *USB-SERIAL CH340 (COM3)*
-5. Remember the COM part within parentheses and with its number, (e.g. COM3 or COM4), let's call it *<COMx>*
+4. Command will list all connected USB devices, find device which has COM in its name, something like **USB-SERIAL CH340 (COM3)**
+5. Remember the COM part within parentheses and with its number, (e.g. COM3 or COM4), let's call it _<COMx>_
 
 ![Reading the Serial USB port connected to Arduino board](Imgs/ArduinoCOMPort.bmp)
 
@@ -105,11 +105,11 @@ The following steps describe how to setup avrdude for Microchip Studio:
 2. Tools > External Tools
 3. When External Tools window opens, click **Add** button
 4. In title field, enter the any name for programmer (e.g. Arduino Uploader)
-5. In **Command** field, enter location of **avrdude.exe** program, located inside *<avrdude-loc>* (e.g. *<avrdude-loc>*\avrdude.exe)
-6. In **Arguments** field, enter the following: -C"*<avrdude-loc>*\avrdude.conf" -v -patmega328p -carduino -P*<COMx>* -b57600 -D -Uflash:w:"$(ProjectDir)Debug\$(TargetName).hex":i
+5. In **Command** field, enter location of **avrdude.exe** program, located inside _<avrdude-loc>_ (e.g. _<avrdude-loc>_\avrdude.exe)
+6. In **Arguments** field, enter the following: `-C"<avrdude-loc>\avrdude.conf" -v -patmega328p -carduino -P<COMx> -b57600 -D -Uflash:w:"$(ProjectDir)Debug\$(TargetName).hex":i`
 7. Check **Use Output window** checkbox
 
-**NOTE:** Don't forget to replace *<avrdude-loc>* to real where avrdude is extracted and *<COMx>* with the real COM port with its number.
+**NOTE:** Don't forget to replace _<avrdude-loc>_ to real where avrdude is extracted and _<COMx>_ with the real COM port with its number.
 
 ![External tools setup](Imgs/ExternalTools.bmp)
 
