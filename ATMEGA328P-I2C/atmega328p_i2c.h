@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include <avr/io.h>
 #include <avr/cpufunc.h>
 
@@ -17,7 +18,7 @@
 Used in wait methods (see class ATMega328PI2C below) to avoid
 infinite loops, and generate timeout error instead,
 which can be further properly handled in code. */
-#define I2C_TIMEOUT_COUNTER_DEFAULT 160000UL;
+#define I2C_TIMEOUT_COUNTER_DEFAULT 16000UL
 
 // ATMEGA328P's I2C register bit masks
 #define I2C_TWS_MASK        0xF8
@@ -53,26 +54,27 @@ for data reception from slave. */
 
 
 class ATMega328PI2C {
-public:
-    ATMega328PI2C();
-    ATMEGA328PI2C(const uint32_t);
+	public:
+	ATMega328PI2C();
+	ATMega328PI2C(const uint32_t);
+	ATMega328PI2C(const ATMega328PI2C&);
 
-    int i2c_initialize(const uint32_t);
-    int i2c_send(const uint8_t, uint8_t const * const, const unsigned);
-    int i2c_receive(const uint8_t, uint8_t* const, const unsigned);
+	int i2c_initialize(const uint32_t);
+	int i2c_send(const uint8_t, uint8_t const * const, const unsigned);
+	int i2c_receive(const uint8_t, uint8_t* const, const unsigned);
 
-private:
-    bool is_initialized;
-    uint32_t i2c_timeout_count;
+	private:
+	bool is_initialized;
+	uint32_t i2c_timeout_count;
 
-    int wait_for_transmission_completion(void);
-    int wait_for_acknowledgment(const uint8_t);
+	int wait_for_transmission_completion(void);
+	int wait_for_acknowledgment(const uint8_t);
 
-    int start_communication(void);
-    void stop_communication(void);
-    int read_from_address(const uint8_t);
-    int write_to_address(const uint8_t);
-    int read_byte(uint8_t* const);
-    int read_last_byte(uint8_t* const);
-    int write_data(const uint8_t);
+	int start_communication(void);
+	void stop_communication(void);
+	int read_from_address(const uint8_t);
+	int write_to_address(const uint8_t);
+	int read_byte(uint8_t* const);
+	int read_last_byte(uint8_t* const);
+	int write_byte(const uint8_t);
 };
