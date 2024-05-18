@@ -41,7 +41,7 @@
 					<Attribute>template</Attribute>
 					<Category>source</Category>
 					<Condition>C Lib</Condition>
-					<FileContentHash>BVKHHE8853WvMkrOw0k3zg==</FileContentHash>
+					<FileContentHash>VjSGq44t/3IHSL1ATPOBng==</FileContentHash>
 					<FileVersion></FileVersion>
 					<Name>templates/library.c</Name>
 					<SelectString>Main file (.c)</SelectString>
@@ -52,7 +52,7 @@
 					<Attribute>template</Attribute>
 					<Category>source</Category>
 					<Condition>C Lib</Condition>
-					<FileContentHash>G0XtXwMIamMgYWpjMWDloQ==</FileContentHash>
+					<FileContentHash>k4kLg/mIs+31K2ryZuIJPw==</FileContentHash>
 					<FileVersion></FileVersion>
 					<Name>templates/library.cpp</Name>
 					<SelectString>Main file (.cpp)</SelectString>
