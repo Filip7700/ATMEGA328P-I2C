@@ -53,11 +53,11 @@ Following table describes all possible working modes and their respective comman
 +-------------------------+------------------------+---------------------+------------------------+---------------------+
 
 NOTE:
-For now the SHTC3 driver ONLY works in the mode described with 0x7866 command code, i.e.:
+For now the SHTC3 driver ONLY works in the mode described with 0x7CA2 command code, i.e.:
  - Uses high resolution
- - I2C clock stretching is disabled
+ - I2C clock stretching is enabled
  - Reads temperature data first, and humidity data second
-(See SHTC3_MEASUREMENT_COMMAND_HIGH_RES_TEMPERATURE_FIRST macro) */
+(See SHTC3_MEASUREMENT_COMMAND_HIGH_RES_CLK_STRETCHING_TEMPERATURE_FIRST macro) */
 
 #define SHTC3_MEASUREMENT_COMMAND_HIGH_RES_CLK_STRETCHING_TEMPERATURE_FIRST     0x7CA2
 #define SHTC3_MEASUREMENT_COMMAND_HIGH_RES_CLK_STRETCHING_TEMPERATURE_FIRST_MSB 0x7C
@@ -102,7 +102,7 @@ to power up and enter the idle mode.
 For better use with _delay_ms() function time is also rounded up to
 milliseconds. */
 #define SHTC3_POWERUP_TIME_MICROSECONDS           230U
-#define SHTC3_POWERUP_TIME_MILLISECONDS             1U
+#define SHTC3_POWERUP_TIME_MILLISECONDS             2U
 
 /* Time read from SHTC3 datasheet.
 Describes typical time in microseconds wich is needed for SHTC3 sensor to

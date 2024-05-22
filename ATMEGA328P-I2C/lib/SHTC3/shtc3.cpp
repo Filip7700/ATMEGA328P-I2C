@@ -32,8 +32,8 @@ int SHTC3::write_wakeup_command(void) {
 
 int SHTC3::write_measure_command(void) {
     uint8_t write_buffer[SHTC3_WRITE_BUFFER_COMMAND_BYTES_COUNT] = {
-        SHTC3_MEASUREMENT_COMMAND_HIGH_RES_TEMPERATURE_FIRST_MSB,
-        SHTC3_MEASUREMENT_COMMAND_HIGH_RES_TEMPERATURE_FIRST_LSB};
+        SHTC3_MEASUREMENT_COMMAND_HIGH_RES_CLK_STRETCHING_TEMPERATURE_FIRST_MSB,
+        SHTC3_MEASUREMENT_COMMAND_HIGH_RES_CLK_STRETCHING_TEMPERATURE_FIRST_LSB};
 
     int ret = this->shtc3_i2c.i2c_send(SHTC3_I2C_ADDRESS, write_buffer, SHTC3_WRITE_BUFFER_COMMAND_BYTES_COUNT);
 
@@ -63,7 +63,7 @@ int SHTC3::shtc3_read_off_data(void) {
            The mode works by reading temperature first, humidity second,
            in high resolution for better precision,
            i.e. 16 bit data for both temperature and humidity.
-           Furthermore, the mode works with clock stretching disabled,
+           Furthermore, the mode works with clock stretching enabled,
            and relies of waiting for predefined time,
            before requesting the read.
            See SHTC3_MEASUREMENT_COMMAND_HIGH_RES_TEMPERATURE_FIRST)
@@ -101,7 +101,7 @@ int SHTC3::shtc3_read_off_data(void) {
 
         if(ret == SHTC3_RET_OK) {
             /* Give some time for SHTC3 sensor to finish measuring temperature
-            and humidity (since clock stretching is disabled).
+            and humidity (since clock stretching is enabled).
             Typically, it takes 10800us (10.8 ms) for SHTC3 to finish measuring.
             Here the time is rounded up to 11 ms.
             See SHTC3_MEASUREMENT_DURATION_MILLISECONDS
@@ -143,6 +143,7 @@ int SHTC3::shtc3_read_off_data(void) {
 
                 // STEP 4: Put SHTC3 slave to sleep mode
                 ret = this->write_sleep_command();
+                _delay_ms(SHTC3_POWERUP_TIME_MILLISECONDS);
             }
         }
     }
